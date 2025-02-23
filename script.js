@@ -1,389 +1,388 @@
-var canvas = document.getElementById("canvas");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// Initialize the GL context
-var gl = canvas.getContext('webgl');
-if(!gl){
-  console.error("Unable to initialize WebGL.");
-}
-
-//Time
-var time = 0.0;
-
-//************** Shader sources **************
-
-var vertexSource = `
-attribute vec2 position;
-void main() {
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
-
-var fragmentSource = `
-precision highp float;
-
-uniform float width;
-uniform float height;
-vec2 resolution = vec2(width, height);
-
-uniform float time;
-
-#define POINT_COUNT 8
-
-vec2 points[POINT_COUNT];
-const float speed = -0.5;
-const float len = 0.25;
-float intensity = 1.3;
-float radius = 0.008;
-
-//https://www.shadertoy.com/view/MlKcDD
-//Signed distance to a quadratic bezier
-float sdBezier(vec2 pos, vec2 A, vec2 B, vec2 C){    
-  vec2 a = B - A;
-  vec2 b = A - 2.0*B + C;
-  vec2 c = a * 2.0;
-  vec2 d = A - pos;
-
-  float kk = 1.0 / dot(b,b);
-  float kx = kk * dot(a,b);
-  float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
-  float kz = kk * dot(d,a);      
-
-  float res = 0.0;
-
-  float p = ky - kx*kx;
-  float p3 = p*p*p;
-  float q = kx*(2.0*kx*kx - 3.0*ky) + kz;
-  float h = q*q + 4.0*p3;
-
-  if(h >= 0.0){ 
-    h = sqrt(h);
-    vec2 x = (vec2(h, -h) - q) / 2.0;
-    vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
-    float t = uv.x + uv.y - kx;
-    t = clamp( t, 0.0, 1.0 );
-
-    // 1 root
-    vec2 qos = d + (c + b*t)*t;
-    res = length(qos);
-  }else{
-    float z = sqrt(-p);
-    float v = acos( q/(p*z*2.0) ) / 3.0;
-    float m = cos(v);
-    float n = sin(v)*1.732050808;
-    vec3 t = vec3(m + m, -n - m, n - m) * z - kx;
-    t = clamp( t, 0.0, 1.0 );
-
-    // 3 roots
-    vec2 qos = d + (c + b*t.x)*t.x;
-    float dis = dot(qos,qos);
-        
-    res = dis;
-
-    qos = d + (c + b*t.y)*t.y;
-    dis = dot(qos,qos);
-    res = min(res,dis);
-    
-    qos = d + (c + b*t.z)*t.z;
-    dis = dot(qos,qos);
-    res = min(res,dis);
-
-    res = sqrt( res );
-  }
-    
-  return res;
-}
-
-
-//http://mathworld.wolfram.com/HeartCurve.html
-vec2 getHeartPosition(float t){
-  return vec2(16.0 * sin(t) * sin(t) * sin(t),
-              -(13.0 * cos(t) - 5.0 * cos(2.0*t)
-              - 2.0 * cos(3.0*t) - cos(4.0*t)));
-}
-
-//https://www.shadertoy.com/view/3s3GDn
-float getGlow(float dist, float radius, float intensity){
-  return pow(radius/dist, intensity);
-}
-
-float getSegment(float t, vec2 pos, float offset, float scale){
-  for(int i = 0; i < POINT_COUNT; i++){
-    points[i] = getHeartPosition(offset + float(i)*len + fract(speed * t) * 6.28);
-  }
-    
-  vec2 c = (points[0] + points[1]) / 2.0;
-  vec2 c_prev;
-  float dist = 10000.0;
-    
-  for(int i = 0; i < POINT_COUNT-1; i++){
-    //https://tinyurl.com/y2htbwkm
-    c_prev = c;
-    c = (points[i] + points[i+1]) / 2.0;
-    dist = min(dist, sdBezier(pos, scale * c_prev, scale * points[i], scale * c));
-  }
-  return max(0.0, dist);
-}
-
-void main(){
-  vec2 uv = gl_FragCoord.xy/resolution.xy;
-  float widthHeightRatio = resolution.x/resolution.y;
-  vec2 centre = vec2(0.5, 0.5);
-  vec2 pos = centre - uv;
-  pos.y /= widthHeightRatio;
-  //Shift upwards to centre heart
-  pos.y += 0.02;
-  float scale = 0.000015 * height;
+function createStars() {
+    const starsContainer = document.querySelector('.snow-container');
+    const numberOfStars = 100;
   
-  float t = time;
-    
-  //Get first segment
-  float dist = getSegment(t, pos, 0.0, scale);
-  float glow = getGlow(dist, radius, intensity);
-  
-  vec3 col = vec3(0.0);
-
-  //White core
-  col += 10.0*vec3(smoothstep(0.003, 0.001, dist));
-  //Pink glow
-  col += glow * vec3(1.0,0.05,0.3);
-  
-  //Get second segment
-  dist = getSegment(t, pos, 3.4, scale);
-  glow = getGlow(dist, radius, intensity);
-  
-  //White core
-  col += 10.0*vec3(smoothstep(0.003, 0.001, dist));
-  //Blue glow
-  col += glow * vec3(0.1,0.4,1.0);
-        
-  //Tone mapping
-  col = 1.0 - exp(-col);
-
-  //Gamma
-  col = pow(col, vec3(0.4545));
-
-  //Output to screen
-  gl_FragColor = vec4(col,1.0);
-}
-`;
-
-//************** Utility functions **************
-
-window.addEventListener('resize', onWindowResize, false);
-
-function onWindowResize(){
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.uniform1f(widthHandle, window.innerWidth);
-  gl.uniform1f(heightHandle, window.innerHeight);
-}
-
-
-//Compile shader and combine with source
-function compileShader(shaderSource, shaderType){
-  var shader = gl.createShader(shaderType);
-  gl.shaderSource(shader, shaderSource);
-  gl.compileShader(shader);
-  if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-    throw "Shader compile failed with: " + gl.getShaderInfoLog(shader);
+    for (let i = 0; i < numberOfStars; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 60 + '%'; // Chỉ ở nửa trên màn hình
+      star.style.animationDelay = Math.random() * 2 + 's';
+      starsContainer.appendChild(star);
+    }
   }
-  return shader;
-}
-
-//From https://codepen.io/jlfwong/pen/GqmroZ
-//Utility to complain loudly if we fail to find the attribute/uniform
-function getAttribLocation(program, name) {
-  var attributeLocation = gl.getAttribLocation(program, name);
-  if (attributeLocation === -1) {
-    throw 'Cannot find attribute ' + name + '.';
-  }
-  return attributeLocation;
-}
-
-function getUniformLocation(program, name) {
-  var attributeLocation = gl.getUniformLocation(program, name);
-  if (attributeLocation === -1) {
-    throw 'Cannot find uniform ' + name + '.';
-  }
-  return attributeLocation;
-}
-
-//************** Create shaders **************
-
-//Create vertex and fragment shaders
-var vertexShader = compileShader(vertexSource, gl.VERTEX_SHADER);
-var fragmentShader = compileShader(fragmentSource, gl.FRAGMENT_SHADER);
-
-//Create shader programs
-var program = gl.createProgram();
-gl.attachShader(program, vertexShader);
-gl.attachShader(program, fragmentShader);
-gl.linkProgram(program);
-
-gl.useProgram(program);
-
-//Set up rectangle covering entire canvas 
-var vertexData = new Float32Array([
-  -1.0,  1.0,   // top left
-  -1.0, -1.0,   // bottom left
-   1.0,  1.0,   // top right
-   1.0, -1.0,   // bottom right
-]);
-
-//Create vertex buffer
-var vertexDataBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
-
-// Layout of our data in the vertex buffer
-var positionHandle = getAttribLocation(program, 'position');
-
-gl.enableVertexAttribArray(positionHandle);
-gl.vertexAttribPointer(positionHandle,
-  2,        // position is a vec2 (2 values per component)
-  gl.FLOAT, // each component is a float
-  false,    // don't normalize values
-  2 * 4,    // two 4 byte float components per vertex (32 bit float is 4 bytes)
-  0         // how many bytes inside the buffer to start from
-  );
-
-//Set uniform handle
-var timeHandle = getUniformLocation(program, 'time');
-var widthHandle = getUniformLocation(program, 'width');
-var heightHandle = getUniformLocation(program, 'height');
-
-gl.uniform1f(widthHandle, window.innerWidth);
-gl.uniform1f(heightHandle, window.innerHeight);
-
-var lastFrame = Date.now();
-var thisFrame;
-
-function draw(){
   
-  //Update time
-  thisFrame = Date.now();
-  time += (thisFrame - lastFrame)/1000; 
-  lastFrame = thisFrame;
-
-  //Send uniforms to program
-  gl.uniform1f(timeHandle, time);
-  //Draw a triangle strip connecting vertices 0-4
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  requestAnimationFrame(draw);
-}
-
-draw();
-
-
-var radius = 240; 
-var autoRotate = true; 
-var rotateSpeed = -60; 
-var imgWidth = 120; 
-var imgHeight = 170; 
-
-var bgMusicURL = 'https://user-images.githubusercontent.com/151072490/283747943-7b08424b-8647-4bdc-996c-965063dbb5e3.mp4';
-var bgMusicControls = true; 
-
-setTimeout(init, 1000);
-
-var odrag = document.getElementById('drag-container');
-var ospin = document.getElementById('spin-container');
-var aImg = ospin.getElementsByTagName('img');
-var aVid = ospin.getElementsByTagName('video');
-var aEle = [...aImg, ...aVid];
-
-
-ospin.style.width = imgWidth + "px";
-ospin.style.height = imgHeight + "px";
-
-var ground = document.getElementById('ground');
-ground.style.width = radius * 3 + "px";
-ground.style.height = radius * 3 + "px";
-
-function init(delayTime) {
-  for (var i = 0; i < aEle.length; i++) {
-    aEle[i].style.transform = "rotateY(" + (i * (360 / aEle.length)) + "deg) translateZ(" + radius + "px)";
-    aEle[i].style.transition = "transform 1s";
-    aEle[i].style.transitionDelay = delayTime || (aEle.length - i) / 4 + "s";
+  // Gọi hàm tạo sao khi trang web load
+  createStars();
+  
+  function createSnow() {
+    const snowContainer = document.querySelector('.snow-container');
+    const snow = document.createElement('div');
+    snow.classList.add('snow');
+  
+    // Vị trí ngẫu nhiên theo chiều ngang
+    snow.style.left = Math.random() * 100 + '%';
+  
+    // Tốc độ rơi và kích thước ngẫu nhiên
+    const duration = Math.random() * 5 + 5;
+    const size = Math.random() * 3 + 2;
+  
+    snow.style.width = size + 'px';
+    snow.style.height = size + 'px';
+    snow.style.opacity = Math.random() * 0.7 + 0.3;
+  
+    // Thêm animation
+    snow.style.animation = `fall ${duration}s linear`;
+  
+    snowContainer.appendChild(snow);
+  
+    // Xóa bông tuyết sau khi rơi xong
+    setTimeout(() => {
+      snow.remove();
+    }, duration * 1000);
   }
-}
-
-function applyTranform(obj) {
- 
-  if(tY > 180) tY = 180;
-  if(tY < 0) tY = 0;
-
-  obj.style.transform = "rotateX(" + (-tY) + "deg) rotateY(" + (tX) + "deg)";
-}
-
-function playSpin(yes) {
-  ospin.style.animationPlayState = (yes?'running':'paused');
-}
-
-var sX, sY, nX, nY, desX = 0,
-    desY = 0,
-    tX = 0,
-    tY = 10;
-
-if (autoRotate) {
-  var animationName = (rotateSpeed > 0 ? 'spin' : 'spinRevert');
-  ospin.style.animation = `${animationName} ${Math.abs(rotateSpeed)}s infinite linear`;
-}
-
-if (bgMusicURL) {
-  document.getElementById('music-container').innerHTML += `
-<audio src="${bgMusicURL}" ${bgMusicControls? 'controls': ''} autoplay loop>    
-<p>If you are reading this, it is because your browser does not support the audio element.</p>
-</audio>
-`;
-}
-
-document.onpointerdown = function (e) {
-  clearInterval(odrag.timer);
-  e = e || window.event;
-  var sX = e.clientX,
-      sY = e.clientY;
-
-  this.onpointermove = function (e) {
-    e = e || window.event;
-    var nX = e.clientX,
-        nY = e.clientY;
-    desX = nX - sX;
-    desY = nY - sY;
-    tX += desX * 0.1;
-    tY += desY * 0.1;
-    applyTranform(odrag);
-    sX = nX;
-    sY = nY;
-  };
-
-  this.onpointerup = function (e) {
-    odrag.timer = setInterval(function () {
-      desX *= 0.95;
-      desY *= 0.95;
-      tX += desX * 0.1;
-      tY += desY * 0.1;
-      applyTranform(odrag);
-      playSpin(false);
-      if (Math.abs(desX) < 0.5 && Math.abs(desY) < 0.5) {
-        clearInterval(odrag.timer);
-        playSpin(true);
+  
+  // Cập nhật keyframes animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fall {
+      from {
+        transform: translateY(-10px);
       }
-    }, 17);
-    this.onpointermove = this.onpointerup = null;
-  };
-
-  return false;
-};
-
-document.onmousewheel = function(e) {
-  e = e || window.event;
-  var d = e.wheelDelta / 20 || -e.detail;
-  radius += d;
-  init(1);
-};
+      to {
+        transform: translateY(100vh);
+      }
+    }
+    
+    @keyframes sway {
+      from {
+        transform: translateX(-15px);
+      }
+      to {
+        transform: translateX(15px);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Tạo tuyết với tần suất thấp hơn
+  setInterval(createSnow, 200);
+  
+  // Thêm vào cuối file
+  const musicBtn = document.querySelector('.music-toggle');
+  const audio = document.getElementById('bgMusic');
+  
+  musicBtn.addEventListener('click', () => {
+    if (audio.paused) {
+      audio.play();
+      musicBtn.textContent = '🔊';
+    } else {
+      audio.pause();
+      musicBtn.textContent = '🔈';
+    }
+  });
+  
+  // Thêm hiệu ứng di chuyển cho ông già Noel
+  function moveSanta() {
+    const santaContainer = document.querySelector('.santa-container');
+  
+    // Reset vị trí khi ông già Noel bay ra khỏi màn hình
+    setInterval(() => {
+      const rect = santaContainer.getBoundingClientRect();
+      if (rect.left > window.innerWidth) {
+        santaContainer.style.left = '-200px';
+      }
+    }, 100);
+  }
+  
+  // Gọi hàm di chuyển ông già Noel
+  moveSanta();
+  
+  // Thêm hiệu ứng quà rơi
+  function createGift() {
+    const gift = document.createElement('div');
+    gift.classList.add('gift');
+  
+    // Vị trí ngẫu nhiên theo chiều ngang
+    const randomX = Math.random() * (window.innerWidth - 40); // Trừ đi kích thước gift
+    gift.style.left = randomX + 'px';
+    gift.style.top = '-50px';
+  
+    const messages = [
+      '🎁 Chúc Anh có giáng sinh an lành',
+      '🎄 Anh là hộp quà của em nè',
+      '⭐ Giáng sinh không lạnhhh',
+      '🎅 Em yêu Anhhh !',
+    ];  
+  
+    gift.addEventListener('click', () => {
+      const popup = document.createElement('div');
+      popup.classList.add('gift-popup');
+      popup.textContent = messages[Math.floor(Math.random() * messages.length)];
+      document.body.appendChild(popup);
+      popup.style.display = 'block';
+  
+      // Hiệu ứng âm thanh khi mở quà
+      const unwrapSound = new Audio('unwrap.mp3');
+      unwrapSound.play();
+  
+      setTimeout(() => {
+        popup.style.display = 'none';
+        popup.remove();
+      }, 3000);
+  
+      gift.remove();
+    });
+  
+    document.body.appendChild(gift);
+  
+    // Animation rơi mượt mà hơn
+    let pos = -50;
+    let speed = 1;
+    const maxSpeed = 3;
+    const acceleration = 0.05;
+  
+    const fall = setInterval(() => {
+      speed = Math.min(speed + acceleration, maxSpeed);
+      pos += speed;
+      gift.style.top = pos + 'px';
+  
+      // Kiểm tra va chạm với đáy màn hình
+      if (pos > window.innerHeight) {
+        clearInterval(fall);
+        gift.remove();
+      }
+    }, 20);
+  }
+  
+  // Giảm tần suất tạo quà
+  setInterval(createGift, 1000); // 8 giây một lần
+  
+  function addTreeLights() {
+    const tree = document.querySelector('.tree');
+    const colors = ['#ff0', '#f00', '#0f0', '#00f', '#ff0'];
+  
+    for (let i = 0; i < 20; i++) {
+      const light = document.createElement('div');
+      light.classList.add('light');
+      light.style.background = colors[Math.floor(Math.random() * colors.length)];
+      light.style.left = Math.random() * 100 + '%';
+      light.style.top = Math.random() * 100 + '%';
+      light.style.animationDelay = Math.random() * 2 + 's';
+      tree.appendChild(light);
+    }
+  }
+  
+  function updateCountdown() {
+    const christmas = new Date(new Date().getFullYear(), 11, 25);
+    const now = new Date();
+    const diff = christmas - now;
+  
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  
+    document.getElementById('days').textContent = days
+      .toString()
+      .padStart(2, '0');
+    document.getElementById('hours').textContent = hours
+      .toString()
+      .padStart(2, '0');
+    document.getElementById('minutes').textContent = minutes
+      .toString()
+      .padStart(2, '0');
+    document.getElementById('seconds').textContent = seconds
+      .toString()
+      .padStart(2, '0');
+  }
+  
+  setInterval(updateCountdown, 1000);
+  
+  // Hiệu ứng mây trôi
+  function animateClouds() {
+    const clouds = document.querySelectorAll('.cloud');
+    clouds.forEach((cloud, index) => {
+      cloud.style.animation = `float ${15 + index * 2}s linear infinite`;
+      cloud.style.top = `${index * 15}%`;
+    });
+  }
+  
+  // Hiệu ứng pháo hoa
+  function createFirework(x, y) {
+    const colors = ['#ff0', '#ff4', '#4ff', '#f4f', '#4f4'];
+    const particles = 30;
+    const container = document.querySelector('.fireworks-container');
+  
+    // Giới hạn tọa độ y trong phạm vi container
+    const containerRect = container.getBoundingClientRect();
+    y = Math.min(y, containerRect.height);
+  
+    for (let i = 0; i < particles; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'firework-particle';
+      particle.style.backgroundColor =
+        colors[Math.floor(Math.random() * colors.length)];
+  
+      const angle = (i * 360) / particles;
+      const velocity = 2 + Math.random() * 2;
+  
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+  
+      container.appendChild(particle);
+  
+      const rad = (angle * Math.PI) / 180;
+      const vx = Math.cos(rad) * velocity;
+      const vy = Math.sin(rad) * velocity;
+  
+      let posX = x;
+      let posY = y;
+  
+      const animate = () => {
+        posX += vx;
+        posY += vy;
+  
+        // Giới hạn phạm vi di chuyển trong container
+        if (
+          posX < 0 ||
+          posX > containerRect.width ||
+          posY < 0 ||
+          posY > containerRect.height
+        ) {
+          particle.remove();
+          return;
+        }
+  
+        particle.style.left = posX + 'px';
+        particle.style.top = posY + 'px';
+  
+        requestAnimationFrame(animate);
+      };
+  
+      animate();
+    }
+  }
+  
+  // Hiệu ứng particle khi di chuột
+  function createParticle(e) {
+    const particle = document.createElement('div');
+    particle.className = 'mouse-particle';
+    particle.style.left = e.pageX + 'px';
+    particle.style.top = e.pageY + 'px';
+    document.body.appendChild(particle);
+  
+    setTimeout(() => particle.remove(), 1000);
+  }
+  
+  // Thêm tương tác với cây thông
+  function addTreeInteraction() {
+    const tree = document.querySelector('.tree');
+    const bells = document.querySelectorAll('.bell');
+  
+    tree.addEventListener('click', () => {
+      tree.classList.add('shake');
+  
+      // Thêm hiệu ứng rung cho chuông
+      bells.forEach((bell) => {
+        bell.style.animation = 'none';
+        bell.offsetHeight; // Trigger reflow
+        bell.style.animation = 'bellRing 0.5s';
+      });
+  
+      setTimeout(() => {
+        tree.classList.remove('shake');
+        bells.forEach((bell) => {
+          bell.style.animation = 'bellRing 2s infinite';
+        });
+      }, 500);
+    });
+  }
+  
+  // Thêm hàm trang trí cây thông mới
+  function decorateTree() {
+    const tree = document.querySelector('.tree');
+    const layers = document.querySelectorAll('.tree-layer');
+  
+    // Thêm chuông
+    const bellPositions = [
+      { left: '40%', top: '20%' },
+      { right: '20%', top: '40%' },
+      { left: '30%', top: '60%' },
+      { right: '25%', top: '70%' },
+    ];
+  
+    bellPositions.forEach((pos) => {
+      const bell = document.createElement('div');
+      bell.className = 'bell';
+      Object.assign(bell.style, pos);
+      tree.appendChild(bell);
+    });
+  
+    // Thêm các quả châu
+    const colors = ['red', 'gold', 'silver'];
+    layers.forEach((layer) => {
+      const layerRect = layer.getBoundingClientRect();
+      const numOrnaments = 8;
+  
+      for (let i = 0; i < numOrnaments; i++) {
+        const ornament = document.createElement('div');
+        ornament.className = `ornament ${
+          colors[Math.floor(Math.random() * colors.length)]
+        }`;
+  
+        // Vị trí ngẫu nhiên trong phạm vi của tầng
+        const left = 20 + Math.random() * 60; // 20% đến 80%
+        const top = 20 + Math.random() * 60; // 20% đến 80%
+  
+        ornament.style.left = `${left}%`;
+        ornament.style.top = `${top}%`;
+  
+        layer.appendChild(ornament);
+      }
+    });
+  
+    // Thêm hiệu ứng lấp lánh
+    const lights = 30;
+    for (let i = 0; i < lights; i++) {
+      const light = document.createElement('div');
+      light.className = 'light';
+      light.style.left = `${Math.random() * 100}%`;
+      light.style.top = `${Math.random() * 100}%`;
+      light.style.animationDelay = `${Math.random() * 2}s`;
+      light.style.background = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      tree.appendChild(light);
+    }
+  }
+  
+  // Khởi tạo các hiệu ứng
+  document.addEventListener('DOMContentLoaded', () => {
+    const treeImage = document.querySelector('.tree img'); // Giả sử ảnh cây thông nằm trong class .tree
+  
+    // Nếu ảnh đã load xong
+    if (treeImage.complete) {
+      decorateTree();
+      addTreeLights();
+    } else {
+      // Nếu ảnh chưa load xong, đợi sự kiện load
+      treeImage.addEventListener('load', () => {
+        decorateTree();
+        addTreeLights();
+      });
+    }
+  
+    // Các hiệu ứng khác vẫn giữ nguyên
+    animateClouds();
+    addTreeInteraction();
+  
+    document.addEventListener('click', (e) => {
+      createFirework(e.pageX, e.pageY);
+      createParticle(e);
+    });
+  
+    document.addEventListener('mousemove', (e) => {
+      if (Math.random() < 0.1) {
+        createParticle(e);
+      }
+    });
+  });
