@@ -1,388 +1,448 @@
-function createStars() {
-    const starsContainer = document.querySelector('.snow-container');
-    const numberOfStars = 100;
-  
-    for (let i = 0; i < numberOfStars; i++) {
-      const star = document.createElement('div');
-      star.classList.add('star');
-      star.style.left = Math.random() * 100 + '%';
-      star.style.top = Math.random() * 60 + '%'; // Chỉ ở nửa trên màn hình
-      star.style.animationDelay = Math.random() * 2 + 's';
-      starsContainer.appendChild(star);
+// Fungsi untuk memulai musik
+function playMusic() {
+  const music = document.getElementById('background-music');
+  music.play();
+}
+window.addEventListener('DOMContentLoaded', function() {
+  playMusic();
+});
+document.body.addEventListener('click', playMusic, { once: true });
+const content = document.getElementById('content');
+const footer = document.getElementsByTagName('footer')[0];
+const timer = document.getElementById('timer');
+
+const second = 1000,
+  minute = second * 60,
+  hour = minute * 60,
+  day = hour * 24;
+let countDown = new Date('Oct 22, 2023 00:00:00').getTime(),
+  x = setInterval(function () {
+    let now = new Date().getTime(),
+      distance = countDown - now;
+    // document.getElementById('days').innerText = Math.floor(distance / (day)),
+    document.getElementById('hours').innerText = Math.floor(distance / (hour)),
+      document.getElementById('minutes').innerText = Math.floor((distance % (hour)) / (minute)),
+      document.getElementById('seconds').innerText = Math.floor((distance % (minute)) / second);
+
+    if (distance < 0) {
+
+      timer.classList.add('d-none');
+      confetti();
+      clearInterval(x);
+      _slideSatu();
     }
-  }
-  
-  // Gọi hàm tạo sao khi trang web load
-  createStars();
-  
-  function createSnow() {
-    const snowContainer = document.querySelector('.snow-container');
-    const snow = document.createElement('div');
-    snow.classList.add('snow');
-  
-    // Vị trí ngẫu nhiên theo chiều ngang
-    snow.style.left = Math.random() * 100 + '%';
-  
-    // Tốc độ rơi và kích thước ngẫu nhiên
-    const duration = Math.random() * 5 + 5;
-    const size = Math.random() * 3 + 2;
-  
-    snow.style.width = size + 'px';
-    snow.style.height = size + 'px';
-    snow.style.opacity = Math.random() * 0.7 + 0.3;
-  
-    // Thêm animation
-    snow.style.animation = `fall ${duration}s linear`;
-  
-    snowContainer.appendChild(snow);
-  
-    // Xóa bông tuyết sau khi rơi xong
-    setTimeout(() => {
-      snow.remove();
-    }, duration * 1000);
-  }
-  
-  // Cập nhật keyframes animation
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes fall {
-      from {
-        transform: translateY(-10px);
-      }
-      to {
-        transform: translateY(100vh);
-      }
-    }
-    
-    @keyframes sway {
-      from {
-        transform: translateX(-15px);
-      }
-      to {
-        transform: translateX(15px);
-      }
-    }
-  `;
-  document.head.appendChild(style);
-  
-  // Tạo tuyết với tần suất thấp hơn
-  setInterval(createSnow, 200);
-  
-  // Thêm vào cuối file
-  const musicBtn = document.querySelector('.music-toggle');
-  const audio = document.getElementById('bgMusic');
-  
-  musicBtn.addEventListener('click', () => {
-    if (audio.paused) {
-      audio.play();
-      musicBtn.textContent = '🔊';
-    } else {
-      audio.pause();
-      musicBtn.textContent = '🔈';
-    }
+
+  }, second)
+
+const _slideSatu = function () {
+  const tap = document.getElementById('tap');
+  const slideSatu = document.getElementById('slideSatu');
+  slideSatu.classList.remove('d-none');
+  setTimeout(function () {
+    tap.classList.remove('d-none');
+    document.body.addEventListener('click', function () {
+      _slideDua();
+    })
+  }, 7000);
+};
+
+const _slideDua = function () {
+  const slideSatu = document.getElementById('slideSatu');
+  const tap = document.getElementById('tap');
+  const slideDua = document.getElementById('slideDua');
+
+  setTimeout(function () {
+    slideSatu.classList.replace('animate__slideInDown', 'animate__backOutDown');
+    tap.classList.add('d-none');
+    setTimeout(function () {
+      slideSatu.classList.add('d-none');
+    }, 1000);
+  }, 1000);
+
+  slideDua.classList.remove('d-none');
+  setTimeout(function () {
+    tap.classList.remove('d-none');
+    document.body.addEventListener('click', function () {
+      slideDua.classList.replace('animate__zoomInDown', 'animate__fadeOutLeft');
+      slideDua.classList.remove('animate__delay-2s', 'animate__slow');
+      tap.classList.add('d-none');
+      setTimeout(function () {
+        slideDua.remove();
+        _slideTiga();
+      }, 1000);
+    })
+  }, 40000);
+};
+
+const _slideTiga = function () {
+  const tap = document.getElementById('tap');
+  const slideTiga = document.getElementById('slideTiga');
+
+  slideTiga.classList.remove('d-none');
+  setTimeout(function () {
+    tap.classList.remove('d-none');
+    document.body.addEventListener('click', function () {
+      slideTiga.classList.remove('animate__delay-2s', 'animate__slow');
+      slideTiga.classList.replace('animate__fadeInRight', 'animate__fadeOut');
+      tap.remove();
+      setTimeout(function () {
+        slideTiga.remove();
+        _slideEmpat();
+      }, 1000);
+    })
+  }, 43000);
+}
+
+function getRandomPosition(element) {
+  var x = document.body.offsetHeight - element.clientHeight;
+  var y = document.body.offsetWidth - element.clientWidth;
+  var randomX = Math.floor(Math.random() * 500);
+  var randomY = Math.floor(Math.random() * y);
+  return [randomX, randomY];
+};
+
+const _slideEmpat = function () {
+  const slideEmpat = document.getElementById('slideEmpat');
+  const btn = document.getElementsByTagName('button');
+  slideEmpat.classList.remove('d-none');
+
+  btn[0].addEventListener('click', function () {
+    var xy = getRandomPosition(slideEmpat);
+    slideEmpat.style.top = xy[0] + 'px';
+    // slideEmpat.style.left = xy[1] + 'px';
   });
-  
-  // Thêm hiệu ứng di chuyển cho ông già Noel
-  function moveSanta() {
-    const santaContainer = document.querySelector('.santa-container');
-  
-    // Reset vị trí khi ông già Noel bay ra khỏi màn hình
-    setInterval(() => {
-      const rect = santaContainer.getBoundingClientRect();
-      if (rect.left > window.innerWidth) {
-        santaContainer.style.left = '-200px';
-      }
-    }, 100);
-  }
-  
-  // Gọi hàm di chuyển ông già Noel
-  moveSanta();
-  
-  // Thêm hiệu ứng quà rơi
-  function createGift() {
-    const gift = document.createElement('div');
-    gift.classList.add('gift');
-  
-    // Vị trí ngẫu nhiên theo chiều ngang
-    const randomX = Math.random() * (window.innerWidth - 40); // Trừ đi kích thước gift
-    gift.style.left = randomX + 'px';
-    gift.style.top = '-50px';
-  
-    const messages = [
-      '🎁 Chúc Anh có giáng sinh an lành',
-      '🎄 Anh là hộp quà của em nè',
-      '⭐ Giáng sinh không lạnhhh',
-      '🎅 Em yêu Anhhh !',
-    ];  
-  
-    gift.addEventListener('click', () => {
-      const popup = document.createElement('div');
-      popup.classList.add('gift-popup');
-      popup.textContent = messages[Math.floor(Math.random() * messages.length)];
-      document.body.appendChild(popup);
-      popup.style.display = 'block';
-  
-      // Hiệu ứng âm thanh khi mở quà
-      const unwrapSound = new Audio('unwrap.mp3');
-      unwrapSound.play();
-  
+
+  btn[1].addEventListener('click', function () {
+    slideEmpat.classList.replace('animate__fadeInDown', 'animate__bounceOut');
+    slideEmpat.classList.remove('animate__delay-2s');
+    setTimeout(function () {
+      slideEmpat.remove()
       setTimeout(() => {
-        popup.style.display = 'none';
-        popup.remove();
-      }, 3000);
-  
-      gift.remove();
-    });
-  
-    document.body.appendChild(gift);
-  
-    // Animation rơi mượt mà hơn
-    let pos = -50;
-    let speed = 1;
-    const maxSpeed = 3;
-    const acceleration = 0.05;
-  
-    const fall = setInterval(() => {
-      speed = Math.min(speed + acceleration, maxSpeed);
-      pos += speed;
-      gift.style.top = pos + 'px';
-  
-      // Kiểm tra va chạm với đáy màn hình
-      if (pos > window.innerHeight) {
-        clearInterval(fall);
-        gift.remove();
-      }
-    }, 20);
-  }
-  
-  // Giảm tần suất tạo quà
-  setInterval(createGift, 1000); // 8 giây một lần
-  
-  function addTreeLights() {
-    const tree = document.querySelector('.tree');
-    const colors = ['#ff0', '#f00', '#0f0', '#00f', '#ff0'];
-  
-    for (let i = 0; i < 20; i++) {
-      const light = document.createElement('div');
-      light.classList.add('light');
-      light.style.background = colors[Math.floor(Math.random() * colors.length)];
-      light.style.left = Math.random() * 100 + '%';
-      light.style.top = Math.random() * 100 + '%';
-      light.style.animationDelay = Math.random() * 2 + 's';
-      tree.appendChild(light);
-    }
-  }
-  
-  function updateCountdown() {
-    const christmas = new Date(new Date().getFullYear(), 11, 25);
-    const now = new Date();
-    const diff = christmas - now;
-  
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
-    document.getElementById('days').textContent = days
-      .toString()
-      .padStart(2, '0');
-    document.getElementById('hours').textContent = hours
-      .toString()
-      .padStart(2, '0');
-    document.getElementById('minutes').textContent = minutes
-      .toString()
-      .padStart(2, '0');
-    document.getElementById('seconds').textContent = seconds
-      .toString()
-      .padStart(2, '0');
-  }
-  
-  setInterval(updateCountdown, 1000);
-  
-  // Hiệu ứng mây trôi
-  function animateClouds() {
-    const clouds = document.querySelectorAll('.cloud');
-    clouds.forEach((cloud, index) => {
-      cloud.style.animation = `float ${15 + index * 2}s linear infinite`;
-      cloud.style.top = `${index * 15}%`;
-    });
-  }
-  
-  // Hiệu ứng pháo hoa
-  function createFirework(x, y) {
-    const colors = ['#ff0', '#ff4', '#4ff', '#f4f', '#4f4'];
-    const particles = 30;
-    const container = document.querySelector('.fireworks-container');
-  
-    // Giới hạn tọa độ y trong phạm vi container
-    const containerRect = container.getBoundingClientRect();
-    y = Math.min(y, containerRect.height);
-  
-    for (let i = 0; i < particles; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'firework-particle';
-      particle.style.backgroundColor =
-        colors[Math.floor(Math.random() * colors.length)];
-  
-      const angle = (i * 360) / particles;
-      const velocity = 2 + Math.random() * 2;
-  
-      particle.style.left = x + 'px';
-      particle.style.top = y + 'px';
-  
-      container.appendChild(particle);
-  
-      const rad = (angle * Math.PI) / 180;
-      const vx = Math.cos(rad) * velocity;
-      const vy = Math.sin(rad) * velocity;
-  
-      let posX = x;
-      let posY = y;
-  
-      const animate = () => {
-        posX += vx;
-        posY += vy;
-  
-        // Giới hạn phạm vi di chuyển trong container
-        if (
-          posX < 0 ||
-          posX > containerRect.width ||
-          posY < 0 ||
-          posY > containerRect.height
-        ) {
-          particle.remove();
-          return;
-        }
-  
-        particle.style.left = posX + 'px';
-        particle.style.top = posY + 'px';
-  
-        requestAnimationFrame(animate);
-      };
-  
-      animate();
-    }
-  }
-  
-  // Hiệu ứng particle khi di chuột
-  function createParticle(e) {
-    const particle = document.createElement('div');
-    particle.className = 'mouse-particle';
-    particle.style.left = e.pageX + 'px';
-    particle.style.top = e.pageY + 'px';
-    document.body.appendChild(particle);
-  
-    setTimeout(() => particle.remove(), 1000);
-  }
-  
-  // Thêm tương tác với cây thông
-  function addTreeInteraction() {
-    const tree = document.querySelector('.tree');
-    const bells = document.querySelectorAll('.bell');
-  
-    tree.addEventListener('click', () => {
-      tree.classList.add('shake');
-  
-      // Thêm hiệu ứng rung cho chuông
-      bells.forEach((bell) => {
-        bell.style.animation = 'none';
-        bell.offsetHeight; // Trigger reflow
-        bell.style.animation = 'bellRing 0.5s';
-      });
-  
-      setTimeout(() => {
-        tree.classList.remove('shake');
-        bells.forEach((bell) => {
-          bell.style.animation = 'bellRing 2s infinite';
-        });
+        _slideLima();
       }, 500);
-    });
-  }
-  
-  // Thêm hàm trang trí cây thông mới
-  function decorateTree() {
-    const tree = document.querySelector('.tree');
-    const layers = document.querySelectorAll('.tree-layer');
-  
-    // Thêm chuông
-    const bellPositions = [
-      { left: '40%', top: '20%' },
-      { right: '20%', top: '40%' },
-      { left: '30%', top: '60%' },
-      { right: '25%', top: '70%' },
-    ];
-  
-    bellPositions.forEach((pos) => {
-      const bell = document.createElement('div');
-      bell.className = 'bell';
-      Object.assign(bell.style, pos);
-      tree.appendChild(bell);
-    });
-  
-    // Thêm các quả châu
-    const colors = ['red', 'gold', 'silver'];
-    layers.forEach((layer) => {
-      const layerRect = layer.getBoundingClientRect();
-      const numOrnaments = 8;
-  
-      for (let i = 0; i < numOrnaments; i++) {
-        const ornament = document.createElement('div');
-        ornament.className = `ornament ${
-          colors[Math.floor(Math.random() * colors.length)]
-        }`;
-  
-        // Vị trí ngẫu nhiên trong phạm vi của tầng
-        const left = 20 + Math.random() * 60; // 20% đến 80%
-        const top = 20 + Math.random() * 60; // 20% đến 80%
-  
-        ornament.style.left = `${left}%`;
-        ornament.style.top = `${top}%`;
-  
-        layer.appendChild(ornament);
-      }
-    });
-  
-    // Thêm hiệu ứng lấp lánh
-    const lights = 30;
-    for (let i = 0; i < lights; i++) {
-      const light = document.createElement('div');
-      light.className = 'light';
-      light.style.left = `${Math.random() * 100}%`;
-      light.style.top = `${Math.random() * 100}%`;
-      light.style.animationDelay = `${Math.random() * 2}s`;
-      light.style.background = `hsl(${Math.random() * 360}, 100%, 70%)`;
-      tree.appendChild(light);
+    }, 1000);
+  })
+};
+
+const _slideLima = function () {
+  const slideLima = document.getElementById('slideLima');
+  slideLima.classList.remove('d-none');
+  const trims = document.getElementById('trims');
+
+  setTimeout(() => {
+    trims.classList.remove('d-none');
+  }, 1000);
+
+  slideLima.addEventListener('animationend', () => {
+    slideLima.classList.add('animate__delay-3s')
+    slideLima.classList.replace('animate__bounceIn', 'animate__fadeOut');
+    trims.classList.add('animate__animated', 'animate__fadeOut', 'animate__delay-3s');
+    setTimeout(() => {
+      trims.remove();
+      setTimeout(() => {
+        slideLima.remove();
+        _slideEnam();
+      }, 1000);
+    }, 6000);
+  });
+};
+
+const _slideEnam = function () {
+  const slideEnam = document.getElementById('slideEnam');
+  slideEnam.classList.remove('d-none');
+};
+
+
+new TypeIt("#teks1", {
+  strings: ["Hari ini, saya langitkan semua doa terbaik saya untuk kamu.", "Semoga hal-hal yang membuat kamu runtuh turut menjadi alasan kamu untuk tetap tumbuh.", "Semoga dunia senantiasa menjaga kamu dimanapun kamu berada.", "Semoga hari-hari kamu selalu diiringi cinta yang tak pernah ada batasnya." , "Semoga setiap langkahmu dimudahkan hingga tercapai apa yang kamu inginkan."],
+  startDelay: 4000,
+  speed: 75,
+  waitUntilVisible: true
+}).go();
+
+new TypeIt("#teks2", {
+  strings: ["Dengan ataupun tanpaku, semoga semesta selalu membahagiakan kamu bagimanapun caranya.", " ", "barakallah fi umrik, terima kasih sudah bertahan sampai sejauh ini.", " ", "- Wish all you the best"],
+  startDelay: 2000,
+  speed: 75,
+  waitUntilVisible: true
+}).go();
+
+
+new TypeIt("#trims", {
+  strings: ["Terimakasih."],
+  startDelay: 2000,
+  speed: 150,
+  loop: false,
+  waitUntilVisible: true,
+}).go();
+
+
+
+'use strict';
+
+var onlyOnKonami = false;
+
+function confetti() {
+  // Globals
+  var $window = $(window),
+    random = Math.random,
+    cos = Math.cos,
+    sin = Math.sin,
+    PI = Math.PI,
+    PI2 = PI * 2,
+    timer = undefined,
+    frame = undefined,
+    confetti = [];
+
+  var runFor = 2000
+  var isRunning = true
+
+  setTimeout(() => {
+    isRunning = false
+  }, runFor);
+
+  // Settings
+  var konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65],
+    pointer = 0;
+
+  var particles = 150,
+    spread = 20,
+    sizeMin = 5,
+    sizeMax = 12 - sizeMin,
+    eccentricity = 10,
+    deviation = 100,
+    dxThetaMin = -.1,
+    dxThetaMax = -dxThetaMin - dxThetaMin,
+    dyMin = .13,
+    dyMax = .18,
+    dThetaMin = .4,
+    dThetaMax = .7 - dThetaMin;
+
+  var colorThemes = [
+    function () {
+      return color(200 * random() | 0, 200 * random() | 0, 200 * random() | 0);
+    },
+    function () {
+      var black = 200 * random() | 0;
+      return color(200, black, black);
+    },
+    function () {
+      var black = 200 * random() | 0;
+      return color(black, 200, black);
+    },
+    function () {
+      var black = 200 * random() | 0;
+      return color(black, black, 200);
+    },
+    function () {
+      return color(200, 100, 200 * random() | 0);
+    },
+    function () {
+      return color(200 * random() | 0, 200, 200);
+    },
+    function () {
+      var black = 256 * random() | 0;
+      return color(black, black, black);
+    },
+    function () {
+      return colorThemes[random() < .5 ? 1 : 2]();
+    },
+    function () {
+      return colorThemes[random() < .5 ? 3 : 5]();
+    },
+    function () {
+      return colorThemes[random() < .5 ? 2 : 4]();
     }
+  ];
+
+  function color(r, g, b) {
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
-  
-  // Khởi tạo các hiệu ứng
-  document.addEventListener('DOMContentLoaded', () => {
-    const treeImage = document.querySelector('.tree img'); // Giả sử ảnh cây thông nằm trong class .tree
-  
-    // Nếu ảnh đã load xong
-    if (treeImage.complete) {
-      decorateTree();
-      addTreeLights();
-    } else {
-      // Nếu ảnh chưa load xong, đợi sự kiện load
-      treeImage.addEventListener('load', () => {
-        decorateTree();
-        addTreeLights();
+
+  // Cosine interpolation
+  function interpolation(a, b, t) {
+    return (1 - cos(PI * t)) / 2 * (b - a) + a;
+  }
+
+  // Create a 1D Maximal Poisson Disc over [0, 1]
+  var radius = 1 / eccentricity,
+    radius2 = radius + radius;
+
+  function createPoisson() {
+    // domain is the set of points which are still available to pick from
+    // D = union{ [d_i, d_i+1] | i is even }
+    var domain = [radius, 1 - radius],
+      measure = 1 - radius2,
+      spline = [0, 1];
+    while (measure) {
+      var dart = measure * random(),
+        i, l, interval, a, b, c, d;
+
+      // Find where dart lies
+      for (i = 0, l = domain.length, measure = 0; i < l; i += 2) {
+        a = domain[i], b = domain[i + 1], interval = b - a;
+        if (dart < measure + interval) {
+          spline.push(dart += a - measure);
+          break;
+        }
+        measure += interval;
+      }
+      c = dart - radius, d = dart + radius;
+
+      for (i = domain.length - 1; i > 0; i -= 2) {
+        l = i - 1, a = domain[l], b = domain[i];
+        // c---d          c---d  Do nothing
+        //   c-----d  c-----d    Move interior
+        //   c--------------d    Delete interval
+        //         c--d          Split interval
+        //       a------b
+        if (a >= c && a < d)
+          if (b > d) domain[l] = d; // Move interior (Left case)
+          else domain.splice(l, 2); // Delete interval
+        else if (a < c && b > c)
+          if (b <= d) domain[i] = c; // Move interior (Right case)
+          else domain.splice(i, 0, c, d); // Split interval
+      }
+
+      for (i = 0, l = domain.length, measure = 0; i < l; i += 2)
+        measure += domain[i + 1] - domain[i];
+    }
+
+    return spline.sort();
+  }
+
+  var container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100%';
+  container.style.height = '0';
+  container.style.overflow = 'visible';
+  container.style.zIndex = '9999';
+
+  // Confetto constructor
+  function Confetto(theme) {
+    this.frame = 0;
+    this.outer = document.createElement('div');
+    this.inner = document.createElement('div');
+    this.outer.appendChild(this.inner);
+
+    var outerStyle = this.outer.style,
+      innerStyle = this.inner.style;
+    outerStyle.position = 'absolute';
+    outerStyle.width = (sizeMin + sizeMax * random()) + 'px';
+    outerStyle.height = (sizeMin + sizeMax * random()) + 'px';
+    innerStyle.width = '100%';
+    innerStyle.height = '100%';
+    innerStyle.backgroundColor = theme();
+
+    outerStyle.perspective = '50px';
+    outerStyle.transform = 'rotate(' + (360 * random()) + 'deg)';
+    this.axis = 'rotate3D(' +
+      cos(360 * random()) + ',' +
+      cos(360 * random()) + ',0,';
+    this.theta = 360 * random();
+    this.dTheta = dThetaMin + dThetaMax * random();
+    innerStyle.transform = this.axis + this.theta + 'deg)';
+
+    this.x = $window.width() * random();
+    this.y = -deviation;
+    this.dx = sin(dxThetaMin + dxThetaMax * random());
+    this.dy = dyMin + dyMax * random();
+    outerStyle.left = this.x + 'px';
+    outerStyle.top = this.y + 'px';
+
+    // Create the periodic spline
+    this.splineX = createPoisson();
+    this.splineY = [];
+    for (var i = 1, l = this.splineX.length - 1; i < l; ++i)
+      this.splineY[i] = deviation * random();
+    this.splineY[0] = this.splineY[l] = deviation * random();
+
+    this.update = function (height, delta) {
+      this.frame += delta;
+      this.x += this.dx * delta;
+      this.y += this.dy * delta;
+      this.theta += this.dTheta * delta;
+
+      // Compute spline and convert to polar
+      var phi = this.frame % 7777 / 7777,
+        i = 0,
+        j = 1;
+      while (phi >= this.splineX[j]) i = j++;
+      var rho = interpolation(
+        this.splineY[i],
+        this.splineY[j],
+        (phi - this.splineX[i]) / (this.splineX[j] - this.splineX[i])
+      );
+      phi *= PI2;
+
+      outerStyle.left = this.x + rho * cos(phi) + 'px';
+      outerStyle.top = this.y + rho * sin(phi) + 'px';
+      innerStyle.transform = this.axis + this.theta + 'deg)';
+      return this.y > height + deviation;
+    };
+  }
+
+
+  function poof() {
+    if (!frame) {
+      // Append the container
+      document.body.appendChild(container);
+
+      // Add confetti
+
+      var theme = colorThemes[onlyOnKonami ? colorThemes.length * random() | 0 : 0],
+        count = 0;
+
+      (function addConfetto() {
+
+        if (onlyOnKonami && ++count > particles)
+          return timer = undefined;
+
+        if (isRunning) {
+          var confetto = new Confetto(theme);
+          confetti.push(confetto);
+
+          container.appendChild(confetto.outer);
+          timer = setTimeout(addConfetto, spread * random());
+        }
+      })(0);
+
+
+      // Start the loop
+      var prev = undefined;
+      requestAnimationFrame(function loop(timestamp) {
+        var delta = prev ? timestamp - prev : 0;
+        prev = timestamp;
+        var height = $window.height();
+
+        for (var i = confetti.length - 1; i >= 0; --i) {
+          if (confetti[i].update(height, delta)) {
+            container.removeChild(confetti[i].outer);
+            confetti.splice(i, 1);
+          }
+        }
+
+        if (timer || confetti.length)
+          return frame = requestAnimationFrame(loop);
+
+        // Cleanup
+        document.body.removeChild(container);
+        frame = undefined;
       });
     }
-  
-    // Các hiệu ứng khác vẫn giữ nguyên
-    animateClouds();
-    addTreeInteraction();
-  
-    document.addEventListener('click', (e) => {
-      createFirework(e.pageX, e.pageY);
-      createParticle(e);
-    });
-  
-    document.addEventListener('mousemove', (e) => {
-      if (Math.random() < 0.1) {
-        createParticle(e);
-      }
-    });
+  }
+
+  $window.keydown(function (event) {
+    pointer = konami[pointer] === event.which ?
+      pointer + 1 :
+      +(event.which === konami[0]);
+    if (pointer === konami.length) {
+      pointer = 0;
+      poof();
+    }
   });
+
+  if (!onlyOnKonami) poof();
+};
