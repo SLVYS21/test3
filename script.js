@@ -1,11 +1,44 @@
+document.body.classList.add('soir');
 // Fungsi untuk memulai musik
 function playMusic() {
   const music = document.getElementById('background-music');
   music.play();
 }
 window.addEventListener('DOMContentLoaded', function() {
-  playMusic();
+  setTimeout(function() {
+    const surpriseElement = document.createElement('div');
+    surpriseElement.className = 'surprise-text animate__animated animate__heartBeat';
+    surpriseElement.textContent = 'Surprise...';
+    surpriseElement.style.position = 'fixed';
+    surpriseElement.style.top = '50%';
+    surpriseElement.style.left = '50%';
+    surpriseElement.style.transform = 'translate(-50%, -50%)';
+    surpriseElement.style.zIndex = '1000';
+    document.body.appendChild(surpriseElement);
+    
+    // Afficher le contenu d'anniversaire après un court délai
+    setTimeout(function() {
+      surpriseElement.remove();
+      playMusic();
+      
+      // Afficher le premier slide (modifier selon votre logique existante)
+      document.getElementById('slideSatu').classList.remove('d-none');
+    }, 2000);
+  }, 2000);
 });
+const voeuxData = [
+  {
+    nom: "Sambieni Bryan",
+    poste: "Frontend Dev",
+    message: "Joyeux anniversaire ! Que cette nouvelle année t'apporte bonheur et réussite dans tous tes projets."
+  },
+  {
+    nom: "Sylvanus B.",
+    poste: "Backend Dev",
+    message: "Bon anniv' ! Profite bien de ta journée, tu le mérites amplement !"
+  }
+];
+
 document.body.addEventListener('click', playMusic, { once: true });
 const content = document.getElementById('content');
 const footer = document.getElementsByTagName('footer')[0];
@@ -34,7 +67,27 @@ let countDown = new Date('Oct 22, 2023 00:00:00').getTime(),
 
   }, second)
 
+document.body.addEventListener('click', function() {
+  // Vérifier l'étape actuelle et avancer en conséquence
+  if (currentSlide === 'slideSatu') {
+    _slideDua();
+  } else if (currentSlide === 'slideDua') {
+    // Votre logique existante pour slideDua...
+    _slideTiga();
+  } else if (currentSlide === 'slideTiga') {
+    // Au lieu de passer à slideEmpat, on passe aux voeux
+    _slideVoeux();  // Nouvelle fonction pour afficher les voeux
+  } else if (currentSlide === 'slideVoeux') {
+    // Après avoir vu les voeux, continuer vers le reste
+    _slideEmpat();
+  }
+  // ... autres conditions pour les autres slides
+});
+
+let currentSlide = 'timer'; 
+
 const _slideSatu = function () {
+  currentSlide = 'slideSatu';
   const tap = document.getElementById('tap');
   const slideSatu = document.getElementById('slideSatu');
   slideSatu.classList.remove('d-none');
@@ -47,6 +100,7 @@ const _slideSatu = function () {
 };
 
 const _slideDua = function () {
+  currentSlide = 'slideDua';
   const slideSatu = document.getElementById('slideSatu');
   const tap = document.getElementById('tap');
   const slideDua = document.getElementById('slideDua');
@@ -74,6 +128,31 @@ const _slideDua = function () {
   }, 40000);
 };
 
+const _slideVoeux = function () {
+  currentSlide = 'slideVoeux';
+  
+  // Cacher le slide précédent
+  const slideTiga = document.getElementById('slideTiga');
+  slideTiga.classList.replace('animate__fadeInRight', 'animate__fadeOut');
+  
+  setTimeout(function () {
+    slideTiga.classList.add('d-none');
+    
+    // Afficher la section des voeux
+    const slideVoeux = document.getElementById('slideVoeux');
+    slideVoeux.classList.remove('d-none');
+    slideVoeux.classList.add('animate__fadeIn');
+    
+    // Charger et afficher les voeux
+    afficherVoeux();
+    
+    // Mettre à jour le texte d'instruction
+    const tap = document.getElementById('tap');
+    tap.textContent = "Clique pour continuer";
+    tap.classList.remove('d-none');
+  }, 1000);
+};
+
 const _slideTiga = function () {
   const tap = document.getElementById('tap');
   const slideTiga = document.getElementById('slideTiga');
@@ -92,6 +171,27 @@ const _slideTiga = function () {
     })
   }, 43000);
 }
+
+setTimeout(function() {
+    const surpriseElement = document.createElement('div');
+    surpriseElement.className = 'surprise-text animate__animated animate__heartBeat';
+    surpriseElement.textContent = 'Surprise...';
+    surpriseElement.style.position = 'fixed';
+    surpriseElement.style.top = '50%';
+    surpriseElement.style.left = '50%';
+    surpriseElement.style.transform = 'translate(-50%, -50%)';
+    surpriseElement.style.zIndex = '1000';
+    document.body.appendChild(surpriseElement);
+    
+    // Afficher le contenu d'anniversaire après un court délai
+    setTimeout(function() {
+      surpriseElement.remove();
+      playMusic();
+      
+      // Afficher le premier slide (modifier selon votre logique existante)
+      document.getElementById('slideSatu').classList.remove('d-none');
+    }, 2000);
+  }, 2000);
 
 function getRandomPosition(element) {
   var x = document.body.offsetHeight - element.clientHeight;
@@ -384,7 +484,6 @@ function confetti() {
     };
   }
 
-
   function poof() {
     if (!frame) {
       // Append the container
@@ -446,3 +545,4 @@ function confetti() {
 
   if (!onlyOnKonami) poof();
 };
+
