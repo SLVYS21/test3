@@ -179,3 +179,61 @@ body {
   padding: 0;
   text-align: center;
 }
+
+.voeux-carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 20px;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.voeux-card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.voeux-card h4 {
+  color: #D44147;
+  margin-bottom: 5px;
+}
+
+.voeux-card .poste {
+  color: #616161;
+  font-style: italic;
+  margin-bottom: 15px;
+}
+
+.voeux-card .message {
+  color: #3f3f44;
+  line-height: 1.6;
+}
+
+/* Animation pour "Surprise" */
+@keyframes fadeInScale {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.surprise-text {
+  animation: fadeInScale 1s ease-out;
+  font-size: 2.5rem;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Mode soir/nuit */
+body.soir .bg {
+  filter: brightness(0.6) hue-rotate(220deg);
+}
+
+body.soir .text-muted {
+  color: #d9d9d9 !important;
+}
